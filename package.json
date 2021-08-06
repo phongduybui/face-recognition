@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "nodemon ./server/server",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,9 +11,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@tensorflow/tfjs-node": "^1.7.0",
+    "canvas": "^2.8.0",
     "express": "^4.17.1",
+    "express-fileupload": "^1.2.1",
+    "face-api.js": "^0.22.2",
     "mongoose": "^5.13.5",
-    "multer": "^1.4.2"
+    "multer": "^1.4.2",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.12"
