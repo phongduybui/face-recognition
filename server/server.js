@@ -1,8 +1,16 @@
 import express from 'express';
 import fileUpload from 'express-fileupload';
-import { decodeImage, detectAllFace } from './faceapiServices.js';
+import path from 'path';
+import {
+  decodeImage,
+  detectAllFace,
+  detectSingleFace,
+} from './faceapiServices.js';
 const app = express();
 const port = 5000;
+
+const __dirname = path.resolve();
+app.use('/public', express.static(path.join(__dirname, 'server/public')));
 
 app.use(fileUpload());
 
@@ -12,14 +20,11 @@ app.get('/', (req, res) => {
 
 app.post('/upload', async (req, res) => {
   const { file } = req.files;
-  console.log(file);
   const decodedImage = await decodeImage(file.data);
-  console.log(decodedImage);
 
-  const results = await detectAllFace(decodedImage);
+  const results = await detectSingleFace(decodedImage);
 
-  console.log(results);
-  res.send('ok');
+  res.send(results);
 });
 
 app.listen(port, () => {
