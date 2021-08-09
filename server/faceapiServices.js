@@ -70,12 +70,13 @@ function loadDescriptors() {
 export async function detectSingleFace(decodedImage) {
   const labeledDescriptors = await loadDescriptors();
   const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
-  console.log(faceMatcher);
 
   const result = await faceapi
     .detectSingleFace(decodedImage)
     .withFaceLandmarks()
     .withFaceDescriptor();
+
+  console.log({ result, faceMatcher });
 
   const out = faceapi.createCanvasFromMedia(decodedImage);
 
