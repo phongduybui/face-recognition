@@ -2,11 +2,7 @@ import express from 'express';
 // import fileUpload from 'express-fileupload';
 import path from 'path';
 import bodyParser from 'body-parser';
-import {
-  decodeImage,
-  detectAllFace,
-  detectSingleFace,
-} from './faceapiServices.js';
+import { decodeImage, recogniteSingleFace } from './faceapiServices.js';
 import db from './db.js';
 const app = express();
 const port = 5000;
@@ -24,15 +20,15 @@ app.get('/', (req, res) => {
 });
 
 app.post('/upload', async (req, res) => {
-  // const { file } = req.files;
-  const buffer = Buffer.from(req.body.file, 'base64');
-  console.log(buffer);
-  const decodedImage = await decodeImage(buffer);
-
-  const results = await detectSingleFace(decodedImage);
-
-  res.send(results);
-  // console.log(req.body.file);
+  try {
+    const buffer = Buffer.from(req.body.file, 'base64');
+    const decodedImage = await decodeImage(buffer);
+    const results = await recogniteSingleFace(decodedImage, req.body.userId);
+    res.json(results);
+  } catch (error) {
+    console.log(error);
+    res.json({ error: 'Has error occur!' });
+  }
 });
 
 app.post('/login', (req, res) => {

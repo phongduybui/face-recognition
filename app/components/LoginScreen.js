@@ -49,6 +49,7 @@ const LoginScreen = ({ navigation }) => {
           padding: 16,
           fontSize: 22,
         }}
+        secureTextEntry={true}
         placeholder='Enter password'
         onChangeText={setPassword}
         value={password}
