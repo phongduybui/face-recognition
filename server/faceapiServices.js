@@ -27,6 +27,8 @@ const MODELS_URL = path.join(__dirname, 'server/public/models');
 Promise.all([
   await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODELS_URL),
   await faceapi.nets.faceLandmark68Net.loadFromDisk(MODELS_URL),
+  // await faceapi.nets.tinyFaceDetector.loadFromDisk(MODELS_URL),
+  // await faceapi.nets.faceLandmark68TinyNet.loadFromDisk(MODELS_URL),
   await faceapi.nets.faceRecognitionNet.loadFromDisk(MODELS_URL),
 ]).then(() => console.log('Models loaded!'.red.bgYellow));
 
@@ -72,7 +74,7 @@ export async function detectSingleFace(decodedImage) {
   const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
 
   const result = await faceapi
-    .detectSingleFace(decodedImage)
+    .detectSingleFace(decodedImage, new faceapi.TinyFaceDetectorOptions())
     .withFaceLandmarks()
     .withFaceDescriptor();
 
@@ -96,4 +98,51 @@ export async function detectSingleFace(decodedImage) {
   drawBox.draw(out);
 
   return out.toDataURL();
+}
+
+export async function recogniteSingleFace(decodedImage, userId) {
+  try {
+    const user = db.find((u) => u.id === userId);
+    const imgUrl = `http://localhost:5000/${user.img}`;
+    const imgSource = await loadImage(imgUrl);
+    // const useTinyModel = true;
+    const { descriptor } = await faceapi
+      .detectSingleFace(imgSource)
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    const labeledDescriptor = new faceapi.LabeledFaceDescriptors(user.label, [
+      descriptor,
+    ]);
+    const faceMatcher = new faceapi.FaceMatcher(labeledDescriptor);
+
+    const result = await faceapi
+      .detectSingleFace(decodedImage)
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    const dims = new faceapi.Dimensions(250, 350);
+
+    const out = faceapi.createCanvasFromMedia(decodedImage, dims);
+
+    // faceapi.draw.drawDetections(out, result);
+
+    // console.log(out.toDataURL());
+
+    const bestMatch = faceMatcher.findBestMatch(result.descriptor);
+
+    console.log({ result, faceMatcher, bestMatch });
+
+    const box = result.detection.box;
+    const drawBox = new faceapi.draw.DrawBox(box, {
+      label: `${
+        bestMatch.distance > 0.45 ? 'Unknows' : bestMatch.label
+      } (${Number(1 - bestMatch.distance).toFixed(2)})`,
+    });
+    drawBox.draw(out);
+    return { dataUrl: out.toDataURL(), isSuccess: bestMatch.distance <= 0.45 };
+  } catch (error) {
+    console.log(error);
+    return { error };
+  }
 }

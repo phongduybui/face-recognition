@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { Camera } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import axios from 'axios';
 
-const HomeScreen = ({ route }) => {
+const HomeScreen = ({ navigation, route }) => {
   const [hasPermission, setHasPermission] = useState(null);
   const [uri, setUri] = useState('https://via.placeholder.com/150');
+  const [loading, setLoading] = useState(false);
   const [type, setType] = useState(Camera.Constants.Type.back);
 
   const ref = useRef();
@@ -14,14 +23,46 @@ const HomeScreen = ({ route }) => {
 
   const snap = async () => {
     if (ref.current) {
-      let photo = await ref.current.takePictureAsync({ base64: true });
-      const dataUrl = `data:image/jpg;base64,${photo.base64}`;
+      try {
+        let photo = await ref.current.takePictureAsync({
+          base64: true,
+          exif: true,
+        });
+        photo = await ImageManipulator.manipulateAsync(
+          photo.uri,
+          [
+            {
+              rotate: 0,
+            },
+            {
+              resize: {
+                width: photo.width,
+                height: photo.height,
+              },
+            },
+          ],
+          {
+            compress: 1,
+            base64: true,
+          }
+        );
+        ref.current.pausePreview();
+        // console.log(photo);
+        setLoading(true);
+        const response = await axios.post('http://192.168.1.7:5000/upload', {
+          file: photo.base64,
+          userId: route.params.user.id,
+        });
+        setLoading(false);
 
-      const response = await axios.post('http://192.168.1.7:5000/upload', {
-        file: photo.base64,
-      });
-      setUri(response.data);
-      console.log(response.data);
+        const { dataUrl, isSuccess } = response.data;
+        navigation.navigate('Result', { resultImg: dataUrl, isSuccess });
+
+        // setUri(`data:image/jpg;base64,${photo.base64}`);
+        // console.log(response.data);
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
@@ -41,6 +82,9 @@ const HomeScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <Camera style={styles.camera} type={type} ref={ref}>
+        {loading && (
+          <ActivityIndicator style={{ flex: 1 }} size='large' color='#0000ff' />
+        )}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.button}
@@ -57,16 +101,15 @@ const HomeScreen = ({ route }) => {
           <TouchableOpacity style={styles.button} onPress={snap}>
             <Text style={styles.text}> Capture </Text>
           </TouchableOpacity>
-          <Image
+          {/* <Image
             style={{
               position: 'absolute',
-              width: 500,
-              height: 700,
+              width: 250,
+              height: 350,
               resizeMode: 'contain',
-              transform: [{ rotate: '90deg' }],
             }}
             source={{ uri }}
-          />
+          /> */}
         </View>
       </Camera>
     </View>
@@ -79,11 +122,14 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   buttonContainer: {
     flex: 1,
     backgroundColor: 'transparent',
     flexDirection: 'row',
+    justifyContent: 'center',
     margin: 20,
   },
   button: {
