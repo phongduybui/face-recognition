@@ -20,10 +20,15 @@ app.get('/', (req, res) => {
 });
 
 app.post('/upload', async (req, res) => {
-  const buffer = Buffer.from(req.body.file, 'base64');
-  const decodedImage = await decodeImage(buffer);
-  const results = await recogniteSingleFace(decodedImage, req.body.userId);
-  res.json(results);
+  try {
+    const buffer = Buffer.from(req.body.file, 'base64');
+    const decodedImage = await decodeImage(buffer);
+    const results = await recogniteSingleFace(decodedImage, req.body.userId);
+    res.json(results);
+  } catch (error) {
+    console.log(error);
+    res.json({ error: 'Has error occur!' });
+  }
 });
 
 app.post('/login', (req, res) => {

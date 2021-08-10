@@ -143,6 +143,6 @@ export async function recogniteSingleFace(decodedImage, userId) {
     return { dataUrl: out.toDataURL(), isSuccess: bestMatch.distance <= 0.45 };
   } catch (error) {
     console.log(error);
-    return { error };
+    return { error: 'Has error!' };
   }
 }
