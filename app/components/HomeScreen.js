@@ -19,8 +19,6 @@ const HomeScreen = ({ navigation, route }) => {
 
   const ref = useRef();
 
-  console.log(route.params.user);
-
   const snap = async () => {
     if (ref.current) {
       try {
@@ -28,6 +26,9 @@ const HomeScreen = ({ navigation, route }) => {
           base64: true,
           exif: true,
         });
+        ref.current.pausePreview();
+
+        // Rotate image (IOS only)
         photo = await ImageManipulator.manipulateAsync(
           photo.uri,
           [
@@ -46,7 +47,6 @@ const HomeScreen = ({ navigation, route }) => {
             base64: true,
           }
         );
-        ref.current.pausePreview();
         // console.log(photo);
         setLoading(true);
         const response = await axios.post('http://192.168.1.7:5000/upload', {
